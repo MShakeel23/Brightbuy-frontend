@@ -184,8 +184,7 @@ export default function CheckoutPage() {
       if (response.warnings && response.warnings.type === 'BACKORDER_ITEMS') {
         showNotification(
           `Order placed successfully! Note: ${response.warnings.message}`,
-          'warning',
-          10000 // Show for 10 seconds
+          'warning'
         );
       } else {
         showNotification(`Order #${response.order.orderNumber} placed successfully!`, 'success');

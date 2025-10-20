@@ -185,7 +185,7 @@ class ApiService {
     };
     paymentMethod: 'card' | 'cod';
     deliveryMode: 'standard' | 'store_pickup';
-  }): Promise<{ order: Order; message: string }> {
+  }): Promise<{ order: Order; message: string; warnings?: { type: string; message: string; items: any[] } }> {
     const response = await this.api.post('/orders', orderData);
     return response.data;
   }
