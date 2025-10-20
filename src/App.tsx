@@ -69,10 +69,12 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import InstallPWA from './components/common/InstallPWA';
 import PWAUpdateNotification from './components/common/PWAUpdateNotification';
 import OfflineIndicator from './components/common/OfflineIndicator';
+import ScrollToTop from './components/common/ScrollToTop';
 
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AuthProvider>
         <CartProvider>
           <WishlistProvider>

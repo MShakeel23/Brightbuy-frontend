@@ -134,7 +134,14 @@ class ApiService {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<Product>> {
-    const response = await this.api.get('/products', { params: filters });
+    // Transform 'search' to 'q' for the backend API
+    const params = filters ? {
+      ...filters,
+      q: filters.search,
+      search: undefined
+    } : {};
+    
+    const response = await this.api.get('/products', { params });
     return response.data;
   }
 
@@ -146,7 +153,14 @@ class ApiService {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<Product>> {
-    const response = await this.api.get('/admin/products', { params: filters });
+    // Transform 'search' to 'q' for the backend API
+    const params = filters ? {
+      ...filters,
+      q: filters.search,
+      search: undefined
+    } : {};
+    
+    const response = await this.api.get('/admin/products', { params });
     return response.data;
   }
 
@@ -519,6 +533,29 @@ class ApiService {
 
   async clearWishlist(): Promise<{ message: string; deletedCount: number; wishlistCount: number }> {
     const response = await this.api.delete('/wishlist');
+    return response.data;
+  }
+
+  // Delivery estimation
+  async getDeliveryEstimate(request: {
+    items: Array<{ variantId: number; quantity: number }>;
+    shippingAddress: { city: string; state?: string; zipCode?: string };
+  }): Promise<{
+    deliveryEstimate: {
+      estimatedDeliveryDays: number;
+      estimatedDeliveryDate: string;
+      allItemsInStock: boolean;
+      isMainCity: boolean;
+      deliveryNote: string;
+      outOfStockItems: Array<{
+        variantId: number;
+        requested: number;
+        available: number;
+        backorder: number;
+      }>;
+    }
+  }> {
+    const response = await this.api.post('/orders/estimate-delivery', request);
     return response.data;
   }
 }

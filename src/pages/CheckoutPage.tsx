@@ -10,7 +10,7 @@ import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../contexts/NotificationContext';
 import { formatCurrency } from '../utils/formatCurrency';
-import { calculateDeliveryTime, getDeliveryTimeDescription } from '../utils/validators';
+import deliveryService, { DeliveryEstimate } from '../services/delivery';
 import apiService from '../services/api';
 
 export default function CheckoutPage() {
@@ -46,6 +46,8 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [deliveryEstimate, setDeliveryEstimate] = useState<DeliveryEstimate | null>(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -59,7 +61,46 @@ export default function CheckoutPage() {
       navigate('/cart');
       return;
     }
-  }, [isAuthenticated, items.length, navigate, showNotification]);
+
+    // Get initial delivery estimate
+    if (formData.address.city && items.length > 0) {
+      updateDeliveryEstimate();
+    }
+  }, [isAuthenticated, items.length, navigate, showNotification, formData.address.city]);
+
+  const updateDeliveryEstimate = async () => {
+    if (!formData.address.city || items.length === 0) return;
+
+    setEstimateLoading(true);
+    try {
+      const estimate = await deliveryService.getDeliveryEstimate({
+        items: items.map(item => ({
+          variantId: item.variantId,
+          quantity: item.quantity
+        })),
+        shippingAddress: {
+          city: formData.address.city,
+          state: formData.address.state,
+          zipCode: formData.address.zipCode
+        }
+      });
+      setDeliveryEstimate(estimate);
+    } catch (error) {
+      console.error('Failed to get delivery estimate:', error);
+      // Fallback to basic estimate
+      const basicDays = deliveryService.getBasicEstimate(formData.address.city, true);
+      setDeliveryEstimate({
+        estimatedDeliveryDays: basicDays,
+        estimatedDeliveryDate: new Date(Date.now() + basicDays * 24 * 60 * 60 * 1000).toISOString(),
+        allItemsInStock: true,
+        isMainCity: deliveryService.isMainCity(formData.address.city),
+        deliveryNote: `Estimated ${basicDays} business days`,
+        outOfStockItems: []
+      });
+    } finally {
+      setEstimateLoading(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: any) => {
     if (field.includes('.')) {
@@ -84,6 +125,11 @@ export default function CheckoutPage() {
         ...prev,
         [field]: '',
       }));
+    }
+
+    // Update delivery estimate when city changes
+    if (field === 'address.city') {
+      setTimeout(updateDeliveryEstimate, 500); // Debounce API calls
     }
   };
 
@@ -134,9 +180,19 @@ export default function CheckoutPage() {
       // Create order via API
       const response = await apiService.createOrder(orderData);
 
+      // Show warnings if there were backorders
+      if (response.warnings && response.warnings.type === 'BACKORDER_ITEMS') {
+        showNotification(
+          `Order placed successfully! Note: ${response.warnings.message}`,
+          'warning',
+          10000 // Show for 10 seconds
+        );
+      } else {
+        showNotification(`Order #${response.order.orderNumber} placed successfully!`, 'success');
+      }
+
       // Clear cart and redirect
       clearCart();
-      showNotification(`Order #${response.order.orderNumber} placed successfully!`, 'success');
       navigate('/orders');
     } catch (error: any) {
       console.error('Order placement failed:', error);
@@ -151,8 +207,6 @@ export default function CheckoutPage() {
   const shipping = subtotal >= 50 ? 0 : 9.99;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
-
-  const deliveryTime = calculateDeliveryTime(formData.address.city, true);
 
   if (!isAuthenticated || items.length === 0) {
     return null; // Will redirect
@@ -299,7 +353,26 @@ export default function CheckoutPage() {
                   <div className="ml-3">
                     <div className="text-sm font-medium text-gray-900">Standard Delivery</div>
                     <div className="text-sm text-gray-500">
-                      {getDeliveryTimeDescription(deliveryTime)} • {shipping === 0 ? 'Free' : formatCurrency(shipping)}
+                      {estimateLoading ? (
+                        <span className="inline-flex items-center">
+                          <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Calculating...
+                        </span>
+                      ) : deliveryEstimate ? (
+                        <>
+                          {deliveryEstimate.deliveryNote} • {shipping === 0 ? 'Free' : formatCurrency(shipping)}
+                          {deliveryEstimate.outOfStockItems.length > 0 && (
+                            <div className="text-orange-600 text-xs mt-1">
+                              ⚠️ Some items are backordered (+3 days)
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        `Estimated delivery • ${shipping === 0 ? 'Free' : formatCurrency(shipping)}`
+                      )}
                     </div>
                   </div>
                 </label>

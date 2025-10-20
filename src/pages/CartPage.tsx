@@ -8,6 +8,7 @@ import { useCart } from '../hooks/useCart';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/formatCurrency';
 import { useNotification } from '../contexts/NotificationContext';
+import { StockStatus } from '../components/common/StockStatus';
 
 export default function CartPage() {
   const { items, totalItems, totalAmount, removeItem, updateQuantity, clearCart } = useCart();
@@ -119,9 +120,11 @@ export default function CartPage() {
                         <p className="text-sm font-medium text-gray-900 mt-1">
                           {formatCurrency(item.price)}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {item.stock} in stock
-                        </p>
+                        <StockStatus 
+                          stock={item.stock} 
+                          quantity={item.quantity}
+                          className="mt-1"
+                        />
                       </div>
 
                       {/* Quantity Controls */}

@@ -8,6 +8,7 @@ export default defineConfig({
       include: "**/*.{jsx,tsx}"
     }),
     VitePWA({
+      disable: process.env.NODE_ENV === 'development', // Disable in development
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo.png', 'robots.txt'],
       manifest: {
@@ -108,7 +109,7 @@ export default defineConfig({
         clientsClaim: true
       },
       devOptions: {
-        enabled: true,
+        enabled: false, // Disable PWA in development to avoid glob pattern warnings
         type: 'module'
       }
     })
