@@ -1,0 +1,63 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "BrightBuy",
+  "description": "Modern e-commerce platform for electronics, gadgets, and toys in Texas. Shop smartphones, laptops, gaming consoles, and more with fast delivery.",
+  "url": "https://brightbuy.netlify.app",
+  "logo": "https://brightbuy.netlify.app/logo.png",
+  "sameAs": [
+    "https://github.com/MShakeel23/Brightbuy-db"
+  ],
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://brightbuy.netlify.app/catalog?search={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "BrightBuy",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://brightbuy.netlify.app/logo.png"
+    }
+  },
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Electronics & Technology Products",
+    "itemListElement": [
+      {
+        "@type": "OfferCatalog",
+        "name": "Mobile Phones",
+        "description": "Smartphones and mobile accessories"
+      },
+      {
+        "@type": "OfferCatalog", 
+        "name": "Audio Devices",
+        "description": "Headphones, speakers, and audio equipment"
+      },
+      {
+        "@type": "OfferCatalog",
+        "name": "Gaming",
+        "description": "Video games, consoles, and gaming accessories"
+      },
+      {
+        "@type": "OfferCatalog",
+        "name": "Computers",
+        "description": "Laptops, desktops, and computer accessories"
+      },
+      {
+        "@type": "OfferCatalog",
+        "name": "Wearables",
+        "description": "Smartwatches, fitness trackers, and wearable tech"
+      }
+    ]
+  },
+  "areaServed": {
+    "@type": "State",
+    "name": "Texas",
+    "addressCountry": "US"
+  }
+}

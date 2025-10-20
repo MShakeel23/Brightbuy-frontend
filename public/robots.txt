@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Important pages for crawling
+Sitemap: https://brightbuy.netlify.app/sitemap.xml
+
+# Allow all static assets
+Allow: /assets/
+Allow: /images/
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.jpeg
+Allow: /*.gif
+Allow: /*.svg
+Allow: /*.ico
+Allow: /*.webp
+
+# Disallow admin and sensitive areas (if any)
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /checkout/success/
+Disallow: /orders/
+
+# Crawl delay (optional - be respectful to servers)
+Crawl-delay: 1

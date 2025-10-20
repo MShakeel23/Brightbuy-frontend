@@ -1,0 +1,29 @@
+# Netlify redirects file for BrightBuy SPA
+
+# This file should be placed in the public directory
+
+# SPA fallback - redirect all routes to index.html for React Router
+
+/\* /index.html 200
+
+# Force HTTPS (if not already enforced by Netlify)
+
+http://brightbuy.netlify.app/* https://brightbuy.netlify.app/:splat 301!
+
+# Redirect www to non-www (optional)
+
+https://www.brightbuy.netlify.app/* https://brightbuy.netlify.app/:splat 301!
+
+# SEO-friendly redirects for common patterns
+
+/product/:id/ /product/:id 301
+/category/:slug/ /category/:slug 301
+
+# Legacy URL redirects (add as needed)
+
+/products/_ /catalog/:splat 301
+/shop/_ /catalog/:splat 301
+
+# API redirects to backend (if using same domain)
+
+/api/\* https://your-backend-url.railway.app/api/:splat 200
