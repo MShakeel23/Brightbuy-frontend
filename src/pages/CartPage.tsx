@@ -140,8 +140,7 @@ export default function CartPage() {
                         </span>
                         <button
                           onClick={() => handleQuantityChange(item.variantId, item.quantity + 1)}
-                          disabled={item.quantity >= item.stock}
-                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50"
                         >
                           +
                         </button>

@@ -84,7 +84,10 @@ export default function LoginPage() {
       navigate(from, { replace: true });
     } catch (error: any) {
       console.error('Login failed:', error);
-      showNotification(error.message || 'Login failed. Please try again.', 'error');
+      
+      // Extract the actual error message from the API response
+      const errorMessage = error.response?.data?.error || error.message || 'Login failed. Please try again.';
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -102,7 +105,8 @@ export default function LoginPage() {
       showNotification('Demo login successful!', 'success');
       navigate('/admin', { replace: true });
     } catch (error: any) {
-      showNotification('Demo login failed', 'error');
+      const errorMessage = error.response?.data?.error || error.message || 'Demo login failed';
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }

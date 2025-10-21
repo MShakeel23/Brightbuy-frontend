@@ -558,6 +558,32 @@ class ApiService {
     const response = await this.api.post('/orders/estimate-delivery', request);
     return response.data;
   }
+
+  // Payment endpoints
+  async createStripeCheckoutSession(data: {
+    items: Array<{ variantId: number; quantity: number }>;
+    shippingAddress: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    };
+    deliveryMode: 'standard' | 'store_pickup';
+  }): Promise<{ sessionId: string; url: string }> {
+    const response = await this.api.post('/payments/create-checkout-session', data);
+    return response.data;
+  }
+
+  async getStripeSessionDetails(sessionId: string): Promise<{
+    id: string;
+    payment_status: string;
+    payment_intent: string;
+    amount_total: number;
+    currency: string;
+  }> {
+    const response = await this.api.get(`/payments/session/${sessionId}`);
+    return response.data;
+  }
 }
 
 export const apiService = new ApiService();

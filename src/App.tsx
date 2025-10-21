@@ -40,6 +40,8 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
 import CareersPage from './pages/CareersPage';
 import AccessibilityPage from './pages/AccessibilityPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -117,6 +119,8 @@ function App() {
                       <CheckoutPage />
                     </ProtectedRoute>
                   } />
+                  <Route path="payment/success" element={<PaymentSuccessPage />} />
+                  <Route path="payment/cancel" element={<PaymentCancelPage />} />
                   <Route path="orders" element={
                     <ProtectedRoute>
                       <OrdersPage />

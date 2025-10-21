@@ -12,6 +12,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { formatCurrency } from '../utils/formatCurrency';
 import deliveryService, { DeliveryEstimate } from '../services/delivery';
 import apiService from '../services/api';
+import stripeService from '../services/stripe';
 
 export default function CheckoutPage() {
   const { items, totalItems, totalAmount, clearCart } = useCart();
@@ -161,38 +162,64 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      // Prepare order data
-      const orderData = {
-        items: items.map(item => ({
-          variantId: item.variantId,
-          quantity: item.quantity
-        })),
-        shippingAddress: {
-          street: formData.address.street,
-          city: formData.address.city,
-          state: formData.address.state,
-          zipCode: formData.address.zipCode
-        },
-        paymentMethod: formData.paymentMethod,
-        deliveryMode: (formData.deliveryMode === 'standard' ? 'standard' : 'store_pickup') as 'standard' | 'store_pickup'
+      // Prepare common order data
+      const orderItems = items.map(item => ({
+        variantId: item.variantId,
+        quantity: item.quantity
+      }));
+
+      const shippingAddress = {
+        street: formData.address.street,
+        city: formData.address.city,
+        state: formData.address.state,
+        zipCode: formData.address.zipCode
       };
 
-      // Create order via API
-      const response = await apiService.createOrder(orderData);
+      const deliveryMode = (formData.deliveryMode === 'standard' ? 'standard' : 'store_pickup') as 'standard' | 'store_pickup';
 
-      // Show warnings if there were backorders
-      if (response.warnings && response.warnings.type === 'BACKORDER_ITEMS') {
-        showNotification(
-          `Order placed successfully! Note: ${response.warnings.message}`,
-          'warning'
-        );
+      // Handle different payment methods
+      if (formData.paymentMethod === 'card') {
+        // Use Stripe for card payments
+        try {
+          await stripeService.processCardPayment(
+            orderItems,
+            shippingAddress,
+            deliveryMode
+          );
+          // Stripe will redirect to their checkout page
+          // Order will be created via webhook after successful payment
+        } catch (stripeError: any) {
+          console.error('Stripe payment failed:', stripeError);
+          showNotification(
+            stripeError.message || 'Failed to process card payment. Please try again.',
+            'error'
+          );
+        }
       } else {
-        showNotification(`Order #${response.order.orderNumber} placed successfully!`, 'success');
-      }
+        // Handle Cash on Delivery (COD) payments - create order directly
+        const orderData = {
+          items: orderItems,
+          shippingAddress,
+          paymentMethod: formData.paymentMethod,
+          deliveryMode
+        };
 
-      // Clear cart and redirect
-      clearCart();
-      navigate('/orders');
+        const response = await apiService.createOrder(orderData);
+
+        // Show warnings if there were backorders
+        if (response.warnings && response.warnings.type === 'BACKORDER_ITEMS') {
+          showNotification(
+            `Order placed successfully! Note: ${response.warnings.message}`,
+            'warning'
+          );
+        } else {
+          showNotification(`Order #${response.order.orderNumber} placed successfully!`, 'success');
+        }
+
+        // Clear cart and redirect for COD orders
+        clearCart();
+        navigate('/orders');
+      }
     } catch (error: any) {
       console.error('Order placement failed:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Failed to place order. Please try again.';

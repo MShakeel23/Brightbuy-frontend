@@ -1,31 +1,32 @@
 /**
  * Stripe Service
  * 
- * Placeholder service for Stripe payment operations.
- * This service provides stubs for payment functionality that can be
- * implemented when Stripe integration is fully set up.
- * 
- * To implement full Stripe functionality:
- * 1. Install @stripe/stripe-js package
- * 2. Replace the stub methods with actual Stripe calls
- * 3. Configure VITE_STRIPE_PUBLIC_KEY environment variable
+ * Service for Stripe payment operations using Stripe Checkout.
+ * Handles payment session creation and redirects to Stripe Checkout.
  */
 
+import { loadStripe } from '@stripe/stripe-js';
+import apiService from './api';
+
 class StripeService {
+  private stripePromise: Promise<any>;
   private stripePublicKey: string | undefined;
 
   constructor() {
-    // Use environment variable or provide default
-    this.stripePublicKey = (import.meta as any).env?.VITE_STRIPE_PUBLIC_KEY;
+    // Get the Stripe public key from environment variables
+    this.stripePublicKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
     
     if (!this.stripePublicKey) {
-      console.warn('VITE_STRIPE_PUBLIC_KEY not configured');
+      console.warn('VITE_STRIPE_PUBLISHABLE_KEY not configured');
+      throw new Error('Stripe configuration missing');
     }
+
+    // Initialize Stripe
+    this.stripePromise = loadStripe(this.stripePublicKey);
   }
 
   /**
-   * Create a checkout session for card payment
-   * Currently returns a stub response - implement with actual backend call
+   * Create a checkout session for card payment and redirect to Stripe
    */
   async createCheckoutSession(
     items: Array<{
@@ -43,43 +44,84 @@ class StripeService {
     sessionId: string;
     url: string;
   }> {
-    console.log('Stripe checkout session requested:', { items, shippingAddress, deliveryMode });
-    
-    // This is a stub implementation
-    // In a real implementation, this would make a call to the backend
-    // which would create a Stripe checkout session and return the session details
-    
-    throw new Error('Stripe integration not yet implemented. Use Cash on Delivery instead.');
+    try {
+      // Call backend to create Stripe checkout session
+      const response = await apiService.createStripeCheckoutSession({
+        items,
+        shippingAddress,
+        deliveryMode
+      });
+
+      return {
+        sessionId: response.sessionId,
+        url: response.url
+      };
+    } catch (error: any) {
+      console.error('Failed to create checkout session:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to create payment session');
+    }
   }
 
   /**
    * Redirect to Stripe Checkout
-   * Currently a stub - implement with actual Stripe redirect
    */
   async redirectToCheckout(sessionId: string): Promise<void> {
-    console.log('Stripe redirect requested for session:', sessionId);
-    throw new Error('Stripe integration not yet implemented');
+    // Note: stripe.redirectToCheckout is deprecated
+    // We don't need to use it anymore since the backend returns the checkout URL
+    // This method is kept for backward compatibility but shouldn't be used
+    throw new Error('Use the checkout URL returned from createCheckoutSession instead');
   }
 
   /**
-   * Process card payment directly
-   * Currently a stub - implement with actual Stripe payment processing
+   * Create checkout session and immediately redirect to Stripe
+   * This is the main method that combines session creation and redirect
    */
   async processCardPayment(
-    paymentMethod: any,
-    amount: number,
-    currency: string = 'usd'
-  ): Promise<{
-    success: boolean;
-    paymentIntentId?: string;
-    error?: string;
+    items: Array<{
+      variantId: number;
+      quantity: number;
+    }>,
+    shippingAddress: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    },
+    deliveryMode: 'standard' | 'store_pickup'
+  ): Promise<void> {
+    try {
+      // Create checkout session
+      const { url } = await this.createCheckoutSession(
+        items,
+        shippingAddress,
+        deliveryMode
+      );
+
+      // Redirect to Stripe Checkout using the URL (modern approach)
+      window.location.href = url;
+    } catch (error: any) {
+      console.error('Failed to process card payment:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get checkout session details
+   */
+  async getSessionDetails(sessionId: string): Promise<{
+    id: string;
+    payment_status: string;
+    payment_intent: string;
+    amount_total: number;
+    currency: string;
   }> {
-    console.log('Direct card payment requested:', { paymentMethod, amount, currency });
-    
-    return {
-      success: false,
-      error: 'Stripe integration not yet implemented. Use Cash on Delivery instead.',
-    };
+    try {
+      const response = await apiService.getStripeSessionDetails(sessionId);
+      return response;
+    } catch (error: any) {
+      console.error('Failed to get session details:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to retrieve payment session');
+    }
   }
 
   /**
@@ -96,13 +138,13 @@ class StripeService {
     if (this.stripePublicKey) {
       return {
         configured: true,
-        message: 'Stripe is configured but integration needs to be completed',
+        message: 'Stripe is configured and ready for payments',
       };
     }
     
     return {
       configured: false,
-      message: 'Stripe public key not configured. Set VITE_STRIPE_PUBLIC_KEY environment variable.',
+      message: 'Stripe public key not configured. Set VITE_STRIPE_PUBLISHABLE_KEY environment variable.',
     };
   }
 }
